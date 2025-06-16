@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WebSocket Chat</title>
+</head>
+<body>
+    <h1>WebSocket Chat</h1>
+    
+    <div id="messages"></div>
+    
+    <input type="text" id="messageInput" placeholder="Type a message..." />
+    <button onclick="sendMessage()">Send</button>
+    
+    <script>
+        const ws = new WebSocket('ws://localhost:3000/ws');
+        const messages = document.getElementById('messages');
+        const messageInput = document.getElementById('messageInput');
+        
+        ws.onopen = function() {
+            console.log('Connected to WebSocket');
+            addMessage('Connected to server', 'system');
+        };
+        
+        ws.onmessage = function(event) {
+            const data = JSON.parse(event.data);
+            addMessage(`${data.timestamp}: ${data.text}`, 'message');
+        };
+        
+        ws.onclose = function() {
+            console.log('Disconnected from WebSocket');
+            addMessage('Disconnected from server', 'system');
+        };
+        
+        ws.onerror = function(error) {
+            console.error('WebSocket error:', error);
+            addMessage('Connection error', 'error');
+        };
+        
+        function sendMessage() {
+            const message = messageInput.value.trim();
+            if (message && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({ text: message }));
+                messageInput.value = '';
+            }
+        }
+        
+        function addMessage(text, type) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            if (type === 'system') {
+                div.style.color = 'blue';
+            } else if (type === 'error') {
+                div.style.color = 'red';
+            }
+            messages.appendChild(div);
+            messages.scrollTop = messages.scrollHeight;
+        }
+        
+        // Send message on Enter key
+        messageInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+    </script>
+</body>
+</html>
